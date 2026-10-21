@@ -30,3 +30,24 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', eve
   try { saved = localStorage.getItem('portfolio-theme'); } catch (_) {}
   if (!saved) { document.documentElement.dataset.theme = event.matches ? 'dark' : 'light'; syncThemeButton(); }
 });
+
+// Progressive enhancement: all content remains visible if JavaScript is unavailable.
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+if ('IntersectionObserver' in window && !reducedMotion.matches) {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.section-heading, .project, .service-grid article, .about-grid > div, .timeline article, .faq-section > div, .gallery-grid figure').forEach(element => {
+    element.classList.add('reveal-ready'); observer.observe(element);
+  });
+}
+let progressFrame = false;
+function updateProgress() {
+  const progress = document.querySelector('.scroll-progress');
+  const distance = document.documentElement.scrollHeight - innerHeight;
+  if (progress) progress.style.transform = `scaleX(${distance > 0 ? scrollY / distance : 0})`;
+  progressFrame = false;
+}
+addEventListener('scroll', () => { if (!progressFrame) { progressFrame = true; requestAnimationFrame(updateProgress); } }, { passive: true });
+addEventListener('resize', updateProgress);
+updateProgress();
